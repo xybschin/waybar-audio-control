@@ -1,0 +1,8 @@
+/home/bjarne/waybar-audio-control/.devenv/bootstrap/bootstrapLib.nix
+/home/bjarne/waybar-audio-control/.devenv/bootstrap/default.nix
+/home/bjarne/waybar-audio-control/.devenv/bootstrap/resolve-lock.nix
+/home/bjarne/waybar-audio-control/devenv.local.nix
+/home/bjarne/waybar-audio-control/devenv.lock
+/home/bjarne/waybar-audio-control/devenv.nix
+/home/bjarne/waybar-audio-control/devenv.yaml
+/home/bjarne/waybar-audio-control/.env

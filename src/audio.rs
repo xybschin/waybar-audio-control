@@ -10,7 +10,6 @@ use std::rc::Rc;
 #[derive(Clone)]
 pub struct AudioStream {
     pub index: u32,
-    pub name: String,
     pub volume: u32,
     pub app_name: String,
 }
@@ -99,11 +98,6 @@ impl AudioManager {
 
                 result_vec.push(AudioStream {
                     index: info.index,
-                    name: info
-                        .name
-                        .as_ref()
-                        .map(|s| s.to_string())
-                        .unwrap_or_default(),
                     volume: volume_percent,
                     app_name,
                 });
