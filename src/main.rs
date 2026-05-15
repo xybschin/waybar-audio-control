@@ -1,5 +1,6 @@
 mod audio;
 mod ui;
+mod config;
 
 use audio::AudioManager;
 use gtk::prelude::*;

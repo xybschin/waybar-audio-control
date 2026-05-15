@@ -38,20 +38,10 @@ fn app_icon(app_name: &str) -> &'static str {
     }
 }
 
-fn build_css() -> String {
-    let home = std::env::var("HOME").unwrap_or_default();
-    let theme_dir = format!("{}/.config/omarchy/current/theme", home);
-
-    // Parse fg/bg from waybar.css — same source waybar uses.
-    // We use private names (_fg, _bg) to avoid conflicts with GTK4 reserved color names.
-    let fg = parse_color_from_file(&format!("{}/waybar.css", theme_dir), "foreground")
-        .unwrap_or_else(|| "#cdd6f4".to_string());
-    let bg = parse_color_from_file(&format!("{}/waybar.css", theme_dir), "background")
-        .unwrap_or_else(|| "#1e1e2e".to_string());
-
-    // accent is not in waybar.css; read it from colors.toml
-    let accent = parse_color_from_file(&format!("{}/colors.toml", theme_dir), "accent")
-        .unwrap_or_else(|| "#f5c2e7".to_string());
+fn build_css(colors: &crate::config::Colors) -> String {
+    let fg = &colors.foreground;
+    let bg = &colors.background;
+    let accent = &colors.accent;
 
     format!(
         r#"
@@ -214,42 +204,33 @@ separator {{
     )
 }
 
-/// Parse a `key = "value"` (TOML) or `@define-color key value;` (CSS) line from a file.
-fn parse_color_from_file(path: &str, key: &str) -> Option<String> {
-    let content = std::fs::read_to_string(path).ok()?;
-    for line in content.lines() {
-        // CSS: @define-color foreground #ffcead;
-        if let Some(rest) = line.strip_prefix("@define-color") {
-            let rest = rest.trim().trim_end_matches(';');
-            if let Some((k, v)) = rest.split_once(char::is_whitespace) {
-                if k.trim() == key {
-                    return Some(v.trim().to_string());
-                }
-            }
-        }
-        // TOML: accent = "#7d82d9"
-        if let Some((k, v)) = line.split_once('=') {
-            if k.trim() == key {
-                return Some(v.trim().trim_matches('"').to_string());
-            }
-        }
-    }
-    None
-}
-
-pub fn setup_layer_shell(window: &ApplicationWindow) {
+pub fn setup_layer_shell(window: &ApplicationWindow, pos: &crate::config::Position) {
     window.init_layer_shell();
     window.set_layer(Layer::Overlay);
     window.set_keyboard_mode(gtk4_layer_shell::KeyboardMode::OnDemand);
-    window.set_anchor(gtk4_layer_shell::Edge::Top, true);
-    window.set_anchor(gtk4_layer_shell::Edge::Right, true);
-    window.set_margin(gtk4_layer_shell::Edge::Top, 10);
-    window.set_margin(gtk4_layer_shell::Edge::Right, 10);
+
+    let (anchor_top, anchor_right, anchor_bottom, anchor_left) = match pos.anchor.as_str() {
+        "top-left"     => (true,  false, false, true),
+        "bottom-right" => (false, true,  true,  false),
+        "bottom-left"  => (false, false, true,  true),
+        _              => (true,  true,  false, false),
+    };
+
+    window.set_anchor(gtk4_layer_shell::Edge::Top,    anchor_top);
+    window.set_anchor(gtk4_layer_shell::Edge::Right,  anchor_right);
+    window.set_anchor(gtk4_layer_shell::Edge::Bottom, anchor_bottom);
+    window.set_anchor(gtk4_layer_shell::Edge::Left,   anchor_left);
+
+    window.set_margin(gtk4_layer_shell::Edge::Top,    pos.margin_top);
+    window.set_margin(gtk4_layer_shell::Edge::Right,  pos.margin_right);
+    window.set_margin(gtk4_layer_shell::Edge::Bottom, pos.margin_bottom);
+    window.set_margin(gtk4_layer_shell::Edge::Left,   pos.margin_left);
 }
 
-pub fn apply_css(window: &ApplicationWindow) {
+pub fn apply_css(window: &ApplicationWindow, colors: &crate::config::Colors) {
     let provider = gtk::CssProvider::new();
-    provider.load_from_data(&build_css());
+
+    provider.load_from_data(&build_css(colors));
 
     gtk::style_context_add_provider_for_display(
         &gtk::prelude::WidgetExt::display(window),
@@ -259,14 +240,15 @@ pub fn apply_css(window: &ApplicationWindow) {
 }
 
 pub fn build_ui(app: &Application, audio: Arc<Mutex<AudioManager>>) -> ApplicationWindow {
+    let config = crate::config::load();
     let window = ApplicationWindow::builder()
         .application(app)
         .decorated(false)
         .resizable(false)
         .build();
 
-    setup_layer_shell(&window);
-    apply_css(&window);
+    setup_layer_shell(&window, &config.position);
+    apply_css(&window, &config.colors);
 
     let main_box = Box::builder()
         .orientation(Orientation::Vertical)

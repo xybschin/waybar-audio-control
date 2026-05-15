@@ -7,7 +7,7 @@ use libpulse_binding::{
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct AudioStream {
     pub index: u32,
     pub name: String,
