@@ -66,5 +66,8 @@
           ];
         };
       }
-    );
+    )
+    // {
+      homeManagerModules.default = import ./hm-module.nix;
+    };
 }

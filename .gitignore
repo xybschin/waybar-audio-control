@@ -1,1 +1,12 @@
 /target
+
+# devenv
+.devenv/
+devenv.lock
+devenv.nix
+devenv.yaml
+
+# Nix
+result
+result-*
+.nvim.lua
